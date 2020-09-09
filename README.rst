@@ -841,7 +841,7 @@ Output:
         }
 
 
-.. |Release| image:: https://img.shields.io/github/release/graphql-from-struct/graphql-from-struct.svg
+.. |Release| image:: https://img.shields.io/github/v/release/artamonoviv/graphql-from-struct.svg
    :target: https://github.com/artamonoviv/graphql-from-struct/releases
 .. |Supported versions| image:: https://img.shields.io/pypi/pyversions/graphql-from-struct.svg
    :target: https://pypi.org/project/graphql-from-struct/
