@@ -20,10 +20,14 @@ install:
   - pip install -e .
   
 script:
-  - pytest --cov=graphql_from_struct
+  - pytest --cov=graphql_from_struct --cov-report term
   - sphinx-build -b html docs/source/ docs/build/
+
+after_success:
+  bash <(curl -s https://codecov.io/bash)
 
 notifications:
   email:
     on_success: never
     on_failure: always
+
