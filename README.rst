@@ -1,4 +1,4 @@
-|License| |Release| |Supported versions| |Docs| |Code Coverage|  |Build Status Travis CI| |Blog|
+|License| |Release| |Docs| |Code Coverage| |Build Status Travis CI| |Blog|
 
 GraphQL-From-Struct
 ===================
@@ -843,8 +843,6 @@ Output:
 
 .. |Release| image:: https://img.shields.io/github/v/release/artamonoviv/graphql-from-struct.svg
    :target: https://github.com/artamonoviv/graphql-from-struct/releases
-.. |Supported versions| image:: https://img.shields.io/pypi/pyversions/graphql-from-struct.svg
-   :target: https://pypi.org/project/graphql-from-struct/
 .. |Code Coverage| image:: https://codecov.io/gh/artamonoviv/graphql-from-struct/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/artamonoviv/graphql-from-struct
 .. |Build Status Travis CI| image:: https://travis-ci.org/artamonoviv/graphql-from-struct.svg?branch=master
