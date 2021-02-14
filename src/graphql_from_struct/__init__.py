@@ -3,7 +3,7 @@ import json
 
 class GqlFromStruct:
     """One and only module class"""
-    def __init__(self, struct = None, minimize = False) -> None:
+    def __init__(self, struct = None, minimize = False, force_quotes = 0) -> None:
         """Constructor"""
         self.object = None
         if (isinstance(struct, dict) and "@queries" not in struct.keys()
@@ -19,6 +19,7 @@ class GqlFromStruct:
             raise GqlFromStructException('A wrong structure was passed')
         self.spacing = '    '
         self.minimize = minimize
+        self.force_quotes = force_quotes
 
     def query(self):
         """One and only class method"""
@@ -37,16 +38,16 @@ class GqlFromStruct:
         return ' '.join(result)
 
     @staticmethod
-    def from_struct(struct = None, minimize = False):
+    def from_struct(struct = None, minimize = False, force_quotes = 0):
         """One and only static method"""
         if struct is None:
             raise GqlFromStructException('An empty structure was passed')
-        gql = GqlFromStruct(struct, minimize)
+        gql = GqlFromStruct(struct, minimize, force_quotes)
         return gql.query()
 
     def __operation_generate(self, name, operation):
-        name += ' ' + operation['@operation_name'] if len(operation.get('@operation_name', '')) > 0 else ''
-        name += ' ' + self.__args_generate(operation, 0) if "@args" in operation.keys() else ''
+        name = self.__stringify_it(name) + ' ' + self.__stringify_it(operation['@operation_name']) if len(operation.get('@operation_name', '')) > 0 else self.__stringify_it(name)
+        name = GString(name + ' ' + self.__args_generate(operation, 0)) if "@args" in operation.keys() else GString(name)
         return self.__fields_generate([{name: {'@fields': operation.get('@query', {})}}])
 
     def __fields_generate(self, query = None, depth = 0):
@@ -58,7 +59,7 @@ class GqlFromStruct:
             if isinstance(field, dict):
                 array_field.append(self.__spacing(depth) + str(self.__fields_complex_generate(field, depth)))
             else:
-                array_field.append(self.__spacing(depth) + str(field))
+                array_field.append(self.__spacing(depth) + self.__stringify_it(field))
         if not self.minimize:
             return self.__new_line().join(array_field)
         return ' '.join(array_field)
@@ -67,8 +68,8 @@ class GqlFromStruct:
         array_args = []
         for arg in field['@args']:
             if isinstance(field['@args'][arg], list):
-                array_args.append(self.__spacing(depth) + arg + self.__space() + ':[' + ', '.join(
-                    GqlFromStruct.__stringify_list(field['@args'][arg])) + ']')
+                array_args.append(self.__spacing(depth) + self.__stringify_it(arg) + self.__space() + ':[' + ', '.join(
+                    self.__stringify_list(field['@args'][arg])) + ']')
             elif isinstance(field['@args'][arg], dict):
                 if len(field['@args'][arg]) > 1:
                     raise GqlFromStructException('Dict of arg %s must contain only one key-pair.' % arg)
@@ -118,43 +119,45 @@ class GqlFromStruct:
             if '@alias' in field[field_name].keys():
                 field_name = field[field_name]['@alias'] + \
                              self.__space() + ":" + \
-                             self.__space() + field_name
+                             self.__space() + self.__stringify_it(field_name)
 
             elif '@fragment_name' in field[field_name].keys():
-                field_name = 'fragment ' + field[field_name]['@fragment_name'] + " on " + field_name
+                field_name = 'fragment ' + field[field_name]['@fragment_name'] + " on " + self.__stringify_it(field_name)
 
             elif '@operation_name' in field[field_name].keys():
-                field_name = field[field_name]['@operation_name'] + " "
+                field_name = self.__stringify_it(field[field_name]['@operation_name']) + " "
 
-            array_field = field_name + array_field
+            array_field = self.__stringify_it(field_name) + array_field
 
         return array_field
 
-    @staticmethod
-    def __stringify_list(args):
+    def __stringify_list(self, args):
         array_args=[]
         for arg in args:
-            array_args.append(GqlFromStruct.__stringify_it(arg))
+            array_args.append(self.__stringify_it(arg))
         return array_args
 
     def __stringify_arg(self, arg, value):
-        return arg + self.__space() + ':' + self.__space() + GqlFromStruct.__stringify_it(value)
+        return arg + self.__space() + ":" + self.__space() + self.__stringify_it(value)
 
     def __no_stringify_arg(self,arg, value):
-        return arg + self.__space() + ':' + self.__space() + value
+        return arg + self.__space() + ":" + self.__space() + value
 
-    @staticmethod
-    def __stringify_it(value):
-        if isinstance(value, str):
-            if value.find(' ') == -1:
-                return value
-            elif value.find('"') == -1:
-                return '"' + value + '"'
+    def __stringify_it(self, value):
+        if isinstance(value, GString):
             return value
+        if isinstance(value, str) and self.force_quotes != 1:
+            if value.find(' ') == -1 and self.force_quotes != -1:
+                return GString(value)
+            elif value.find('"') == -1 and self.force_quotes != -1:
+                return GString('"' + value + '"')
+            return GString(value)
         try:
-            return str(int(value))
+            return GString(str(int(value)))
         except Exception:
-            return '"' + str(value) + '"'
+            if self.force_quotes == -1:
+                return str(value)
+            return GString('"' + str(value) + '"')
 
     def __spacing(self, depth):
         if not self.minimize:
@@ -170,6 +173,16 @@ class GqlFromStruct:
         if not self.minimize:
             return '\n'
         return ''
+
+
+class GString(str):
+    def __add__(self, rhs):
+        if isinstance(rhs, GString):
+            return super().__add__(rhs)
+        return super().__add__(GString(rhs))
+
+    def __str__(self):
+        return self
 
 
 class GqlFromStructException(Exception):

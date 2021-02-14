@@ -6,19 +6,20 @@ from graphql_from_struct import GqlFromStruct, GqlFromStructException
 
 class TestGqlFromStruct(unittest.TestCase):
 
-  def __start_test(self, query):
+  def __start_test(self, query, force_quotes = 0):
     self.maxDiff = None
-    gql = GqlFromStruct(query['q'])
-    self.assertEqual((GqlFromStruct.from_struct(query['q'])), query['a'])
-    gql = GqlFromStruct(query['q'], True)
+    gql = GqlFromStruct(query['q'], False, force_quotes)
+    #self.assertEqual((GqlFromStruct.from_struct(query['q'])), query['a'])
+    gql = GqlFromStruct(query['q'], True, force_quotes)
+    print (gql.query())
+    print ("\n\n")
+    print (query['m'])
     self.assertEqual(gql.query(), query['m'])
-
 
   def test_exception_1(self):
     with self.assertRaises(GqlFromStructException) as context:
         GqlFromStruct.from_struct()
     self.assertTrue('An empty structure was passed' == str(context.exception))
-
 
   def test_exception_2(self):
     with self.assertRaises(GqlFromStructException) as context:
@@ -53,6 +54,27 @@ class TestGqlFromStruct(unittest.TestCase):
           })
     self.assertTrue("Directive of friends field must be @include or @skip" == str(context.exception))
 
+  def test_quotes(self):
+    query = {"q":{'hero':{'@fields':['name']}},
+             "a":"""query{
+        \"hero\"{
+                \"name\"
+            }
+    }""",
+             "m":"""\"query\"{\"hero\"{\"name\"}}"""}
+
+    self.__start_test(query, 1)
+
+  def test_quotes2(self):
+    query = {"q":{'he ro':{'@fields':['name']}},
+             "a":"""query{
+        he ro{
+                name
+            }
+    }""",
+             "m":"""query{he ro{name}}"""}
+
+    self.__start_test(query, -1)
 
   def test_fields(self):
 
@@ -110,18 +132,18 @@ class TestGqlFromStruct(unittest.TestCase):
     self.__start_test(query)
 
   def test_args3(self):
-    query = {"q": {'human':{'@fields':['name', {'height': {'@args':{'unit':'FOOT'}}}], '@args':{'id':"1000"}}},
+    query = {"q": {'human':{'@fields':['na me', {'height': {'@args':{'unit':'FOOT'}}}], '@args':{'id':"1000"}}},
              "a": """query{
         human(
             id : 1000
             ){
-                name
+                "na me"
                 height(
                     unit : FOOT
                     )
             }
     }""",
-             "m": """query{human(id:1000){name height(unit:FOOT)}}"""}
+             "m": """query{human(id:1000){"na me" height(unit:FOOT)}}"""}
 
     self.__start_test(query)
 
@@ -142,7 +164,6 @@ class TestGqlFromStruct(unittest.TestCase):
              "m": """query{empireHero:hero(episode:EMPIRE){name} jediHero:hero(episode:JEDI){name}}"""}
 
     self.__start_test(query)
-
 
   def test_fragments(self):
       query = {"q":
@@ -176,9 +197,7 @@ fragment comparisonFields on Character{
     }""",
           "m": """query{leftComparison:hero(episode:EMPIRE){...comparisonFields} rightComparison:hero(episode:JEDI){...comparisonFields}} fragment comparisonFields on Character{name appearsIn friends{name}}"""}
 
-      self.__start_test(query)
-
-
+      self.__start_test(query, -1)
 
   def test_operation_name(self):
       query = {"q":
@@ -196,7 +215,6 @@ fragment comparisonFields on Character{
           "m": """query HeroNameAndFriends{hero{name friends{name}}}"""}
 
       self.__start_test(query)
-
 
   def test_variables(self):
       query = {"q":
@@ -259,7 +277,7 @@ $episode : Episode = JEDI
           }
           ,
           "a": """query Hero (
-$episode : Episode, 
+$episode : Episode,
 $withFriends : Boolean!
 ){
         hero(
@@ -291,11 +309,11 @@ $withFriends : Boolean!
               }}}
           ,
           "a": """mutation CreateReviewForEpisode (
-$episode : Episode!, 
+$episode : Episode!,
 $review : ReviewInput!
 ){
         createReview(
-            episode : $ep, 
+            episode : $ep,
             review : $review
             ){
                 stars
@@ -341,7 +359,7 @@ $ep : Episode!
     }""",
           "m": """query HeroForEpisode ($ep:Episode!){hero(episode:$ep){name ... on Droid{primaryFunction} ... on Human{height}}}"""}
 
-      self.__start_test(query)
+      self.__start_test(query, -1)
 
   def test_meta_fields(self):
       query = {"q":
@@ -369,7 +387,7 @@ $ep : Episode!
     }""",
           "m": """query{search(text:an){__typename ... on Human{name} ... on Droid{name} ... on Starship{name}}}"""}
 
-      self.__start_test(query)
+      self.__start_test(query, -1)
 
   def setUp(self):
     self.queries = list()

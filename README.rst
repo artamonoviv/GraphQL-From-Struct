@@ -81,8 +81,8 @@ data structure input.
 Parameters
 ----------
 
-``GqlFromStruct()`` constructor and ``.from\_struct()`` method take 2 arguments:
-a **struct** (default None) and a **minimize** (default False) flag.
+``GqlFromStruct()`` constructor and ``.from_struct()`` method take 3 arguments:
+a **struct** (default None), a **minimize** (optional, default False) flag and a **force_quotes** (optional, default 0) setting.
 Code:
 
 ::
@@ -104,6 +104,34 @@ gives you:
 ::
 
     query{hero{name}}
+
+By default the GraphQL-From-Struct sets quotes for any string with spaces. You can change it with the **force_quotes** flag. It enforces quoting parameters and arguments with 1 value or disables any quotes with -1:
+
+::
+
+    gql = GqlFromStruct.from_struct({'hero':{'@fields':['name']}}, True, True)
+
+    print (gql)
+
+gives you:
+
+::
+
+    "query"{"hero"{"name"}}
+
+Or
+
+::
+
+    gql = GqlFromStruct.from_struct({'he ro':{'@fields':['name']}}, True, -1)
+
+    print (gql)
+
+gives you:
+
+::
+
+    query{he ro{name}}
 
 Reserved keywords 
 ------------------
