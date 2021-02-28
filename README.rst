@@ -109,7 +109,7 @@ By default the GraphQL-From-Struct sets quotes for any string with spaces. You c
 
 ::
 
-    gql = GqlFromStruct.from_struct({'hero':{'@fields':['name']}}, True, True)
+    gql = GqlFromStruct.from_struct({'hero':{'@fields':['name']}}, True, 1)
 
     print (gql)
 

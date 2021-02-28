@@ -18,8 +18,12 @@ class GqlFromStruct:
                                                   or "@mutations" in self.object.keys())):
             raise GqlFromStructException('A wrong structure was passed')
         self.spacing = '    '
-        self.minimize = minimize
-        self.force_quotes = force_quotes
+        self.__minimize = minimize
+        self.__force_quotes = force_quotes
+        self.__force_quotes_args = False
+        if self.__force_quotes == 2:
+            self.__force_quotes_args = True
+            self.__force_quotes = 0
 
     def query(self):
         """One and only class method"""
@@ -32,8 +36,8 @@ class GqlFromStruct:
             result.append(self.__fields_generate(fragment))
         if '@variables' in self.object.keys():
             result.append(json.dumps(self.object['@variables'],
-                                     indent= None if self.minimize else 4))
-        if not self.minimize:
+                                     indent= None if self.__minimize else 4))
+        if not self.__minimize:
             return self.__new_line().join(result)
         return ' '.join(result)
 
@@ -60,7 +64,7 @@ class GqlFromStruct:
                 array_field.append(self.__spacing(depth) + str(self.__fields_complex_generate(field, depth)))
             else:
                 array_field.append(self.__spacing(depth) + self.__stringify_it(field))
-        if not self.minimize:
+        if not self.__minimize:
             return self.__new_line().join(array_field)
         return ' '.join(array_field)
 
@@ -68,8 +72,12 @@ class GqlFromStruct:
         array_args = []
         for arg in field['@args']:
             if isinstance(field['@args'][arg], list):
-                array_args.append(self.__spacing(depth) + self.__stringify_it(arg) + self.__space() + ':[' + ', '.join(
-                    self.__stringify_list(field['@args'][arg])) + ']')
+                if self.__force_quotes_args:
+                    self.__force_quotes = 1
+                arg_values = self.__stringify_list(field['@args'][arg])
+                if self.__force_quotes_args:
+                    self.__force_quotes = 0
+                array_args.append(self.__spacing(depth) + self.__stringify_it(arg) + self.__space() + ':[' + ', '.join(arg_values) + ']')
             elif isinstance(field['@args'][arg], dict):
                 if len(field['@args'][arg]) > 1:
                     raise GqlFromStructException('Dict of arg %s must contain only one key-pair.' % arg)
@@ -79,7 +87,11 @@ class GqlFromStruct:
                                                               self.__space() + "=" +
                                                               self.__space() + str(value)))
             else:
+                if self.__force_quotes_args:
+                    self.__force_quotes = 1
                 array_args.append(self.__spacing(depth) + self.__stringify_arg(arg, field['@args'][arg]))
+                if self.__force_quotes_args:
+                    self.__force_quotes = 0
         if len(array_args) > 0:
             return '(' + self.__new_line() + (', ' + 
                                               self.__new_line()).join(array_args) + \
@@ -146,31 +158,31 @@ class GqlFromStruct:
     def __stringify_it(self, value):
         if isinstance(value, GString):
             return value
-        if isinstance(value, str) and self.force_quotes != 1:
-            if value.find(' ') == -1 and self.force_quotes != -1:
+        if isinstance(value, str) and self.__force_quotes != 1:
+            if value.find(' ') == -1 and self.__force_quotes != -1:
                 return GString(value)
-            elif value.find('"') == -1 and self.force_quotes != -1:
+            elif value.find('"') == -1 and self.__force_quotes != -1:
                 return GString('"' + value + '"')
             return GString(value)
         try:
             return GString(str(int(value)))
         except Exception:
-            if self.force_quotes == -1:
+            if self.__force_quotes == -1:
                 return str(value)
             return GString('"' + str(value) + '"')
 
     def __spacing(self, depth):
-        if not self.minimize:
+        if not self.__minimize:
             return self.spacing * (depth-1)
         return ''
 
     def __space(self):
-        if not self.minimize:
+        if not self.__minimize:
             return ' '
         return ''
 
     def __new_line(self):
-        if not self.minimize:
+        if not self.__minimize:
             return '\n'
         return ''
 
