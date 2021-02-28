@@ -105,7 +105,7 @@ gives you:
 
     query{hero{name}}
 
-By default the GraphQL-From-Struct sets quotes for any string with spaces. You can change it with the **force_quotes** flag. It enforces quoting parameters and arguments with 1 value or disables any quotes with -1:
+By default the GraphQL-From-Struct sets quotes for any string with spaces. You can change it with the **force_quotes** flag.  It enforces quoting parameters and arguments with 1 value, disables any quotes with -1 or enables only arguments quoting with 2:
 
 ::
 
@@ -132,6 +132,20 @@ gives you:
 ::
 
     query{he ro{name}}
+
+Or
+
+::
+
+    gql = GqlFromStruct.from_struct('human':{'@fields':['name', 'height'], '@args':{'id':['foo', 'bar']}}, True, 2)
+
+    print (gql)
+
+gives you:
+
+::
+
+    query{human(id:["foo", "bar"]){name height}}
 
 Reserved keywords 
 ------------------
