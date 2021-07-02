@@ -118,6 +118,34 @@ class TestGqlFromStruct(unittest.TestCase):
 
     self.__start_test(query)
 
+  def test_quotes6(self):
+    query = {"q": {'human':{'@fields':['name', 'height'], '@args':{'id':["1", 'bar']}}},
+             "a": """query{
+        human(
+            id : ["1", "bar"]
+            ){
+                name
+                height
+            }
+    }""",
+             "m": """query{human(id:["1", "bar"]){name height}}"""}
+
+    self.__start_test(query, 2)
+
+  def test_quotes7(self):
+    query = {"q": {'human':{'@fields':['name', 'height'], '@args':{'id':[1, 'bar']}}},
+             "a": """query{
+        human(
+            id : [1, "bar"]
+            ){
+                name
+                height
+            }
+    }""",
+             "m": """query{human(id:[1, "bar"]){name height}}"""}
+
+    self.__start_test(query, 2)
+
   def test_fields(self):
 
     query = {"q":{'hero':{'@fields':['name']}},

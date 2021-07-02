@@ -165,7 +165,10 @@ class GqlFromStruct:
                 return GString('"' + value + '"')
             return GString(value)
         try:
-            return GString(str(int(value)))
+            if isinstance(value, int) or isinstance(value, float):
+                return GString(str(int(value)))
+            else:
+                return GString('"' + str(value) + '"')
         except Exception:
             if self.__force_quotes == -1:
                 return str(value)
